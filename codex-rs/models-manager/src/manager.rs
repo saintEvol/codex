@@ -448,7 +448,7 @@ fn default_model_from_available(available: Vec<ModelPreset>) -> String {
     available
         .iter()
         .find(|model| model.is_default)
-        .or_else(|| available.first())
+        .or_else(|| available.iter().find(|model| model.can_be_default()))
         .map(|model| model.model.clone())
         .unwrap_or_default()
 }

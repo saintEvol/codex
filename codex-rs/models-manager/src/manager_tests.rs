@@ -897,6 +897,30 @@ fn build_available_models_picks_default_after_hiding_hidden_models() {
     assert_eq!(available, vec![expected_hidden, expected_visible]);
 }
 
+#[test]
+fn build_available_models_never_marks_gpt_5_6_as_default() {
+    let manager = static_manager_for_tests(ModelsResponse { models: Vec::new() });
+
+    let gpt_5_6 = remote_model("gpt-5.6", "GPT-5.6", /*priority*/ 0);
+    let gpt_5_5 = remote_model("gpt-5.5", "GPT-5.5", /*priority*/ 1);
+
+    let expected_gpt_5_6 = ModelPreset::from(gpt_5_6.clone());
+    let mut expected_gpt_5_5 = ModelPreset::from(gpt_5_5.clone());
+    expected_gpt_5_5.is_default = true;
+
+    let available = manager.build_available_models(vec![gpt_5_6, gpt_5_5]);
+
+    assert_eq!(available, vec![expected_gpt_5_6, expected_gpt_5_5]);
+}
+
+#[test]
+fn default_model_from_available_never_falls_back_to_gpt_5_6() {
+    let mut gpt_5_6 = ModelPreset::from(remote_model("gpt-5.6", "GPT-5.6", /*priority*/ 0));
+    gpt_5_6.is_default = false;
+
+    assert_eq!(default_model_from_available(vec![gpt_5_6]), "");
+}
+
 #[tokio::test]
 async fn static_manager_reads_latest_auth_mode() {
     let auth_manager =

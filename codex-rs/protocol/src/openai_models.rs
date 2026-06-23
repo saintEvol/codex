@@ -612,6 +612,13 @@ impl ModelInfo {
 }
 
 impl ModelPreset {
+    /// Models that can be selected explicitly but must never become the app-server default.
+    const NEVER_DEFAULT_MODELS: &[&str] = &["gpt-5.6"];
+
+    pub fn can_be_default(&self) -> bool {
+        !Self::NEVER_DEFAULT_MODELS.contains(&self.model.as_str())
+    }
+
     /// Filter models based on authentication mode.
     ///
     /// In ChatGPT mode, all models are visible. Otherwise, only API-supported models are shown.
@@ -624,14 +631,18 @@ impl ModelPreset {
 
     /// Recompute the single default preset using picker visibility.
     ///
-    /// The first picker-visible model wins; if none are picker-visible, the first model wins.
+    /// The first eligible picker-visible model wins; if none are picker-visible, the first
+    /// eligible model wins. Models in NEVER_DEFAULT_MODELS remain selectable but are skipped.
     pub fn mark_default_by_picker_visibility(models: &mut [ModelPreset]) {
         for preset in models.iter_mut() {
             preset.is_default = false;
         }
-        if let Some(default) = models.iter_mut().find(|preset| preset.show_in_picker) {
+        if let Some(default) = models
+            .iter_mut()
+            .find(|preset| preset.show_in_picker && preset.can_be_default())
+        {
             default.is_default = true;
-        } else if let Some(default) = models.first_mut() {
+        } else if let Some(default) = models.iter_mut().find(|preset| preset.can_be_default()) {
             default.is_default = true;
         }
     }
